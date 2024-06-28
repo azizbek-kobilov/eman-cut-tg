@@ -42,30 +42,26 @@ cartFurtherButton.addEventListener('click', () => {
         cartTotalPrice.classList.add('fluctuate');
     } else {
         const items = [...cartItems.children].reduce((res, cartItem) => {
-        const cartItemName = cartItem.querySelector('.cart-item__name');
-        const cartItemPrice = cartItem.querySelector('.cart-item__price');
-        const cartItemAmount = cartItem.querySelector('.cart-item__amount');
-        res.push({
-            name: cartItemName.textContent,
-            price: cartItemPrice.textContent,
-            amount: parseInt(cartItemAmount.textContent)
-        });
-        return res;
+            const cartItemName = cartItem.querySelector('.cart-item__name');
+            const cartItemPrice = cartItem.querySelector('.cart-item__price');
+            const cartItemAmount = cartItem.querySelector('.cart-item__amount');
+            res.push({
+                name: cartItemName.textContent,
+                price: cartItemPrice.textContent,
+                amount: parseInt(cartItemAmount.textContent)
+            });
+            return res;
         }, []);
-        fetch('/submitOrder', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                initData: window.Telegram.WebApp.initData,
-                items: items,
-                totalPrice: cartTotalPrice.textContent
-            })
-        });
+        
+        const message = {
+            items: items,
+            totalPrice: cartTotalPrice.textContent
+        };
+
+        // Отправка данных в бота через метод sendData
+        Telegram.WebApp.sendData(JSON.stringify(message));
     }
-})
+});
 
 async function loadItems() {
     const response = await fetch('foodItems.json');
