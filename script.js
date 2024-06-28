@@ -10,6 +10,7 @@ Telegram.WebApp.ready()
 configureThemeColor(Telegram.WebApp.colorScheme);
 configureMainButton({text: 'view cart', color: '#008000', onclick: mainButtonClickListener});
 Telegram.WebApp.MainButton.show();
+Telegram.WebApp.sendData(JSON.stringify({message: 'openCart'}));
 
 function mainButtonClickListener() {
     if (Telegram.WebApp.MainButton.text.toLowerCase() === 'view cart') {
