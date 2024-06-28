@@ -1,210 +1,375 @@
-const foodItems = document.querySelector(".food-items");
-const foodItemTemplate = document.querySelector('#food-item');
-const cart = document.querySelector('.cart');
-const cartItemTemplate = document.querySelector('#cart-item');
-const cartItems = document.querySelector('.cart__items');
-const cartTotalPrice = document.querySelector('.cart__total-price');
-const cartFurtherButton = document.querySelector('.cart__further');
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <meta name="format-detection" content="telephone=no"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="MobileOptimized" content="176"/>
+    <meta name="HandheldFriendly" content="True"/>
+    <meta name="robots" content="noindex,nofollow"/>
+    <script src="https://telegram.org/js/telegram-web-app.js?1"></script>
+    <script>
+        function setThemeClass() {
+            document.documentElement.className = Telegram.WebApp.colorScheme;
+        }
 
-Telegram.WebApp.ready()
-configureThemeColor(Telegram.WebApp.colorScheme);
-configureMainButton({text: 'view cart', color: '#008000', onclick: mainButtonClickListener});
-Telegram.WebApp.MainButton.show();
-Telegram.WebApp.sendData(JSON.stringify({message: 'openCart'}));
+        Telegram.WebApp.onEvent('themeChanged', setThemeClass);
+        setThemeClass();
 
-function mainButtonClickListener() {
-    if (Telegram.WebApp.MainButton.text.toLowerCase() === 'view cart') {
-        configureMainButton({text: 'close cart', color: '#FF0000', onclick: mainButtonClickListener});
-    } else {
-        configureMainButton({text: 'view cart', color: '#008000', onclick: mainButtonClickListener});
+    </script>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #222222);
+            font-size: 16px;
+            margin: 0;
+            padding: 0;
+            color-scheme: var(--tg-color-scheme);
+        }
+
+        a {
+            color: var(--tg-theme-link-color, #2678b6);
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            font-size: 14px;
+            margin: 15px 0;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--tg-theme-button-color, #50a8eb);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            cursor: pointer;
+        }
+
+        button[disabled] {
+            opacity: 0.6;
+            cursor: auto;
+            pointer-events: none;
+        }
+
+        button.close_btn {
+            /*position: fixed;*/
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 0;
+            margin: 0;
+            padding: 16px 20px;
+            text-transform: uppercase;
+        }
+
+        section {
+            padding: 15px 15px 65px;
+            text-align: center;
+        }
+
+        p {
+            margin: 40px 0 15px;
+        }
+
+        ul {
+            text-align: left;
+        }
+
+        li {
+            color: var(--tg-theme-hint-color, #a8a8a8);
+        }
+
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 7px;
+        }
+
+        pre {
+            background: rgba(0, 0, 0, .07);
+            border-radius: 4px;
+            padding: 4px;
+            margin: 7px 0;
+            word-break: break-all;
+            word-break: break-word;
+            white-space: pre-wrap;
+            text-align: left;
+        }
+
+        .dark pre {
+            background: rgba(255, 255, 255, .15);
+        }
+
+        .hint {
+            font-size: .8em;
+            color: var(--tg-theme-hint-color, #a8a8a8);
+        }
+
+        .ok {
+            color: green;
+        }
+
+        .err {
+            color: red;
+        }
+
+        #fixed_wrap {
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            transform: translateY(100vh);
+        }
+
+        .viewport_border,
+        .viewport_stable_border {
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: var(--tg-viewport-height, 100vh);
+            pointer-events: none;
+        }
+
+        .viewport_stable_border {
+            height: var(--tg-viewport-stable-height, 100vh);
+        }
+
+        .viewport_border:before,
+        .viewport_stable_border:before {
+            content: attr(text);
+            display: inline-block;
+            position: absolute;
+            background: gray;
+            right: 0;
+            top: 0;
+            font-size: 7px;
+            padding: 2px 4px;
+            vertical-align: top;
+        }
+
+        .viewport_stable_border:before {
+            background: green;
+            left: 0;
+            right: auto;
+        }
+
+        .viewport_border:after,
+        .viewport_stable_border:after {
+            content: '';
+            display: block;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            border: 2px dashed gray;
+        }
+
+        .viewport_stable_border:after {
+            border-color: green;
+        }
+    </style>
+</head>
+<body style="visibility: hidden;">
+<section>
+    <button id="main_btn" onclick="sendMessage('');">Send «Hello, World!»</button>
+    <button id="with_webview_btn" onclick="sendMessage('', true);">
+        Send «Hello, World!» with inline webview button
+    </button>
+    <button onclick="webviewExpand();">Expand Webview</button>
+    <button onclick="toggleMainButton(this);">Hide Main Button</button>
+    <div id="btn_status" class="hint" style="display: none;">
+    </div>
+    <p>Test links:</p>
+    <ul>
+        <li><a id="regular_link" href="?nextpage=1">Regular link #1</a> (opens inside webview)</li>
+        <li><a href="https://telegram.org/" target="_blank">target="_blank" link</a> (opens outside
+            webview)
+        </li>
+        <li><a href="javascript:window.open('https://telegram.org/');">window.open() link</a>
+            (opens outside webview)
+        </li>
+        <li><a href="https://t.me/like">LikeBot t.me link</a> (opens inside Telegram app)</li>
+        <li><a href="tg://resolve?domain=vote">VoteBot tg:// link</a> (does not open)</li>
+    </ul>
+    <p>Test permissions:</p>
+    <ul>
+        <li><a href="javascript:;" onclick="return requestLocation(this);">Request Location</a>
+            <span></span></li>
+        <li><a href="javascript:;" onclick="return requestVideo(this);">Request Video</a>
+            <span></span></li>
+        <li><a href="javascript:;" onclick="return requestAudio(this);">Request Audio</a>
+            <span></span></li>
+    </ul>
+    <pre><code id="webview_data"></code></pre>
+    <div class="hint">
+        Data passed to webview.
+        <span id="webview_data_status" style="display: none;">Checking hash...</span>
+    </div>
+    <pre><code id="theme_data"></code></pre>
+    <div class="hint">
+        Theme params
+    </div>
+</section>
+<div class="viewport_border"></div>
+<div class="viewport_stable_border"></div>
+<script src="https://webappcontent.telegram.org/js/jquery.min.js"></script>
+<script>
+    Telegram.WebApp.ready();
+
+    var initData = Telegram.WebApp.initData || '';
+    var initDataUnsafe = Telegram.WebApp.initDataUnsafe || {};
+
+    function sendMessage(msg_id, with_webview) {
+        if (!initDataUnsafe.query_id) {
+            alert('WebViewQueryId not defined');
+            return;
+        }
+        $('button').prop('disabled', true);
+        $('#btn_status').text('Sending...').removeClass('ok err').show();
+        $.ajax('/demo/sendMessage', {
+            type: 'POST',
+            data: {
+                _auth: initData,
+                msg_id: msg_id || '',
+                with_webview: !initDataUnsafe.receiver && with_webview ? 1 : 0
+            },
+            dataType: 'json',
+            success: function (result) {
+                $('button').prop('disabled', false);
+                if (result.response) {
+                    if (result.response.ok) {
+                        $('#btn_status').html('Message sent successfully!').addClass('ok').show();
+                    } else {
+                        $('#btn_status').text(result.response.description).addClass('err').show();
+                        alert(result.response.description);
+                    }
+                } else {
+                    $('#btn_status').text('Unknown error').addClass('err').show();
+                    alert('Unknown error');
+                }
+            },
+            error: function (xhr) {
+                $('button').prop('disabled', false);
+                $('#btn_status').text('Server error').addClass('err').show();
+                alert('Server error');
+            }
+        });
     }
-    cart.classList.toggle('active');
-}
 
-function configureMainButton({text, color, textColor = '#ffffff', onclick}) {
-    Telegram.WebApp.MainButton.text = text.toUpperCase();
-    Telegram.WebApp.MainButton.color = color;
-    Telegram.WebApp.MainButton.textColor = textColor;
-    Telegram.WebApp.MainButton.onClick(onclick);
-}
-
-function configureThemeColor(color) {
-    if (color === 'dark') {
-        document.documentElement.style.setProperty('--body-background-color', '#1f1e1f');
-        document.documentElement.style.setProperty('--title-color', 'white');
-        document.documentElement.style.setProperty('--sub-text-color', 'white');
-    }
-}
-
-cartFurtherButton.addEventListener('click', () => {
-    Telegram.WebApp.sendData(JSON.stringify({message: 'openCart'}));
-});
-
-async function loadItems() {
-    const response = await fetch('foodItems.json');
-    const items = await response.json();
-
-    items.forEach((item, index) => {
-        let foodItem = foodItemTemplate.content.cloneNode(true);
-        const foodItemImg = foodItem.querySelector('.food-item__icon');
-        const foodItemName = foodItem.querySelector('.food-item__name');
-        const foodItemPrice = foodItem.querySelector('.food-item__price');
-
-        const {name, price, imgLink} = item;
-        foodItemImg.src = imgLink;
-        foodItemName.textContent = name;
-        foodItemPrice.textContent = formatter.format(price);
-        foodItem.querySelector('.food-item').dataset.id = index;
-        foodItems.appendChild(foodItem);
-
-        foodItem = foodItems.querySelector(`.food-item[data-id="${index}"]`);
-        const addItemButton = foodItem.querySelector(".food-item__button[data-add]");
-        addItemButton.addEventListener('click', () => addItemListener(foodItem, index));
-        const removeItemButton = foodItem.querySelector('.food-item__button[data-remove]');
-        removeItemButton.addEventListener('click', () => removeItemListener(foodItem, index));
-    })
-}
-loadItems()
-
-function addItemListener(foodItem, foodItemId) {
-    showRemoveItemButton(foodItem);
-
-    const cartItem = getCartItem(foodItem, foodItemId);
-    cartItemAddListener(foodItem, cartItem);
-}
-
-function cartItemAddListener(foodItem, cartItem) {
-    incrementFoodItemCount(foodItem);
-    updateItemsPrices(foodItem, cartItem);
-    updateTotalPrice();
-}
-
-function removeItemListener(foodItem, foodItemId) {
-    const cartItem = getCartItem(foodItem, foodItemId);
-    cartItemRemoveListener(foodItem, cartItem);
-}
-
-function cartItemRemoveListener(foodItem, cartItem) {
-    const foodItemCount = parseInt(foodItem.dataset.count);
-
-    if (foodItemCount === 1) {
-        hideRemoveItemButton(foodItem, cartItem);
-    } else {
-        decrementFoodItemCount(foodItem, cartItem);
-        updateItemsPrices(foodItem, cartItem);
-    }
-    updateTotalPrice();
-}
-
-function getCartItem(foodItem, foodItemId) {
-    const existingCartItem = document.querySelector(`.cart-item[data-food-item-id="${foodItemId}"]`);
-    if (existingCartItem) {
-        return existingCartItem;
-    } else {
-        let cartItem = createCartItem(foodItem, foodItemId);
-        cartItems.prepend(cartItem);
-        sortCart();
-
-        cartItem = cartItems.querySelector(`.cart-item[data-food-item-id="${foodItemId}"]`);
-        const cartItemAddButton = cartItem.querySelector('.cart-item__button[data-add]');
-        cartItemAddButton.addEventListener('click', () => cartItemAddListener(foodItem, cartItem));
-
-        const cartItemRemoveButton = cartItem.querySelector('.cart-item__button[data-remove]');
-        cartItemRemoveButton.addEventListener('click', () => cartItemRemoveListener(foodItem, cartItem));
-        return cartItem;
-    }
-}
-
-function sortCart() {
-    const items = [...cartItems.children];
-    items.sort((a, b) => parseInt(a.dataset.foodItemId) - parseInt(b.dataset.foodItemId));
-    cartItems.innerHTML = '';
-    items.forEach(cartItem => cartItems.appendChild(cartItem));
-}
-
-function createCartItem(foodItem, foodItemId) {
-    const cartItem = cartItemTemplate.content.cloneNode(true);
-    const foodItemName = foodItem.querySelector('.food-item__name');
-    const cartItemName = cartItem.querySelector('.cart-item__name');
-    cartItemName.textContent = foodItemName.textContent
-
-    const cartItemAmount = cartItem.querySelector('.cart-item__amount');
-    cartItemAmount.textContent = foodItem.dataset.count + 'x';
-
-    const foodItemIcon = foodItem.querySelector('.food-item__icon');
-    const cartItemIcon = cartItem.querySelector('.cart-item__icon');
-    cartItemIcon.src = foodItemIcon.src;
-
-    const foodItemPrice = foodItem.querySelector('.food-item__price');
-    const cartItemPrice = cartItem.querySelector('.cart-item__price');
-    cartItemPrice.textContent = formatter.format(parseFoodItemPrice(foodItemPrice.textContent) * parseInt(foodItem.dataset.count));
-
-    cartItem.querySelector('.cart-item').dataset.foodItemId = foodItemId.toString();
-    return cartItem;
-}
-
-function updateItemsPrices(foodItem, cartItem) {
-    const foodItemPriceElement = foodItem.querySelector('.food-item__price');
-    const foodItemPrice = parseFoodItemPrice(foodItemPriceElement.textContent);
-    const foodItemCount = parseInt(foodItem.dataset.count);
-    const cartItemAmount = cartItem.querySelector('.cart-item__amount');
-    const cartItemPriceElement = cartItem.querySelector('.cart-item__price');
-    cartItemPriceElement.textContent = formatter.format(foodItemPrice * foodItemCount);
-    cartItemAmount.textContent = foodItem.dataset.count + 'x';
-}
-
-function updateTotalPrice() {
-    let total = 0;
-    for (const item of cartItems.children) {
-        total += parseFoodItemPrice(item.querySelector('.cart-item__price').textContent);
-    }
-    cartTotalPrice.textContent = 'Total: ' + formatter.format(total);
-}
-
-function showRemoveItemButton(foodItem) {
-    const addItemButton = foodItem.querySelector(".food-item__button[data-add]");
-    const removeItemButton = foodItem.querySelector(".food-item__button[data-remove]");
-
-    addItemButton.style.left = '60%';
-    addItemButton.textContent = '+';
-    removeItemButton.style.width = '40%';
-}
-
-function hideRemoveItemButton(foodItem, cartItem) {
-    const addItemButton = foodItem.querySelector(".food-item__button[data-add]");
-    const foodItemCountElement = foodItem.querySelector('.food-item__count');
-
-    addItemButton.style.left = '0';
-    addItemButton.textContent = 'add';
-    foodItem.removeAttribute('data-count');
-    foodItemCountElement.style.opacity = 0;
-    cartItem.remove();
-}
-
-function incrementFoodItemCount(foodItem) {
-    const foodItemCountElement = foodItem.querySelector('.food-item__count');
-
-    if (!foodItem.dataset.count) {
-        foodItem.dataset.count = '1'
-        foodItemCountElement.style.opacity = 1;
-    } else {
-        const foodItemCount = parseInt(foodItem.dataset.count);
-        foodItem.dataset.count = (foodItemCount + 1).toString();
+    function webviewExpand() {
+        Telegram.WebApp.expand();
     }
 
-    foodItemCountElement.textContent = foodItem.dataset.count;
-}
+    function webviewClose() {
+        Telegram.WebApp.close();
+    }
 
-function decrementFoodItemCount(foodItem) {
-    const foodItemCountElement = foodItem.querySelector('.food-item__count');
-    const foodItemCount = parseInt(foodItem.dataset.count);
-    foodItem.dataset.count = (foodItemCount - 1).toString();
+    function requestLocation(el) {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                $(el).next('span').html('(' + position.coords.latitude + ', ' + position.coords.longitude + ')').attr('class', 'ok');
+            });
+        } else {
+            $(el).next('span').html('Geolocation is not supported in this browser.').attr('class', 'err');
+        }
+        return false;
+    }
 
-    foodItemCountElement.textContent = foodItem.dataset.count;
-}
+    function requestVideo(el) {
+        if (navigator.mediaDevices) {
+            navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: true
+            }).then(function (stream) {
+                $(el).next('span').html('(Access granted)').attr('class', 'ok');
+            });
+        } else {
+            $(el).next('span').html('Media devices is not supported in this browser.').attr('class', 'err');
+        }
+        return false;
+    }
 
-const formatter = new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'});
+    function requestAudio(el) {
+        if (navigator.mediaDevices) {
+            navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: false
+            }).then(function (stream) {
+                $(el).next('span').html('(Access granted)').attr('class', 'ok');
+            });
+        } else {
+            $(el).next('span').html('Media devices is not supported in this browser.').attr('class', 'err');
+        }
+        return false;
+    }
 
-function parseFoodItemPrice(price) {
-    return parseFloat(price.replaceAll(/\$/g, ''));
-}
+    Telegram.WebApp.onEvent('themeChanged', function () {
+        $('#theme_data').html(JSON.stringify(Telegram.WebApp.themeParams, null, 2));
+    });
+
+    $('#main_btn').toggle(!!initDataUnsafe.query_id);
+    $('#with_webview_btn').toggle(!!initDataUnsafe.query_id && !initDataUnsafe.receiver);
+    // $('#data_btn').toggle(!initDataUnsafe.query_id || !initDataUnsafe.receiver);
+    $('#webview_data').html(JSON.stringify(initDataUnsafe, null, 2));
+    $('#theme_data').html(JSON.stringify(Telegram.WebApp.themeParams, null, 2));
+    $('#regular_link').attr('href', $('#regular_link').attr('href') + location.hash);
+    $('#text_field').focus();
+    if (initDataUnsafe.query_id && initData) {
+        $('#webview_data_status').show();
+        $.ajax('/demo/checkData', {
+            type: 'POST',
+            data: {_auth: initData},
+            dataType: 'json',
+            success: function (result) {
+                if (result.ok) {
+                    $('#webview_data_status').html('Hash is correct').addClass('ok');
+                } else {
+                    $('#webview_data_status').html(result.error).addClass('err');
+                }
+            },
+            error: function (xhr) {
+                $('#webview_data_status').html('Server error').addClass('err');
+            }
+        });
+    }
+    $('body').css('visibility', '');
+    Telegram.WebApp.MainButton
+        .setText('CLOSE WEBVIEW')
+        .show()
+        .onClick(function () {
+            webviewClose();
+        });
+
+    function toggleMainButton(el) {
+        var mainButton = Telegram.WebApp.MainButton;
+        if (mainButton.isVisible) {
+            mainButton.hide();
+            el.innerHTML = 'Show Main Button';
+        } else {
+            mainButton.show();
+            el.innerHTML = 'Hide Main Button';
+        }
+    }
+
+    function round(val, d) {
+        var k = Math.pow(10, d || 0);
+        return Math.round(val * k) / k;
+    }
+
+    function setViewportData() {
+        $('.viewport_border').attr('text', window.innerWidth + ' x ' + round(Telegram.WebApp.viewportHeight, 2));
+        $('.viewport_stable_border').attr('text', window.innerWidth + ' x ' + round(Telegram.WebApp.viewportStableHeight, 2) + ' | is_expanded: ' + (Telegram.WebApp.isExpanded ? 'true' : 'false'));
+    }
+
+    Telegram.WebApp.onEvent('viewportChanged', setViewportData);
+    setViewportData();
+
+
+</script>
+</body>
+</html>
