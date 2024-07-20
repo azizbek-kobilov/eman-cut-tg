@@ -1,50 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submit Name</title>
-    <style>
-        #log {
-            border: 1px solid #ccc;
-            padding: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-            background-color: #f9f9f9;
-        }
-    </style>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+    <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+    <title>WebApp</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-    <form id="nameForm" action="javascript:void(0);">
-        <label for="name">Enter your name:</label>
-        <input type="text" id="name" name="name" required>
-        <button type="submit">Submit</button>
-    </form>
-    <div id="log"></div>
+    <div id="app">
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-        function log(message) {
-            const logElement = document.getElementById('log');
-            logElement.innerHTML += `<p>${message}</p>`;
-        }
+        <!-- Text field -->
 
-        window.Telegram.WebApp.ready();
-        log('Telegram WebApp is ready.');
+        <label class="mdc-text-field mdc-text-field--outlined">
+            <span class="mdc-notched-outline">
+                <span class="mdc-notched-outline__leading"></span>
+                <span class="mdc-notched-outline__notch">
+                    <span class="mdc-floating-label" id="my-label-id">Переводы</span>
+                </span>
+                <span class="mdc-notched-outline__trailing"></span>
+            </span>
+            <input aria-labelledby="my-label-id" class="mdc-text-field__input mdc-menu-surface--anchor" type="text">
+        </label>
 
-        document.getElementById('nameForm').addEventListener('submit', function() {
-            const name = document.getElementById('name').value;
-            const data = { name: name };
+        <!-- Dropdown menu -->
 
-            log(`Sending data: ${JSON.stringify(data)}`);
+        <div class="mdc-menu mdc-menu-surface">
+            <ul aria-hidden="true" aria-orientation="vertical" class="mdc-list" role="menu" tabindex="-1"></ul>
+        </div>
 
-            if (window.Telegram.WebApp) {
-                window.Telegram.WebApp.sendData(JSON.stringify(data));
-                log('Data sent successfully.');
-            } else {
-                log('Telegram WebApp is not available.');
-            }
+    </div>
+<script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+<script>
+    // Read received query params and define necessary variables
+
+    const params = new URLSearchParams(document.location.search);
+    const availableTranslations = JSON.parse(params.get('available'));
+    const callbackUrl = params.get('callback_url')
+
+    // Render MD components and define them as variables
+
+    const field = mdc.textField.MDCTextField.attachTo(document.querySelector('.mdc-text-field'));
+    const fieldElement = document.querySelector('.mdc-text-field');
+    const fieldHeight = fieldElement.clientHeight;
+    const fieldInput = document.querySelector('.mdc-text-field__input');
+
+    const menu = new mdc.menuSurface.MDCMenuSurface(document.querySelector('.mdc-menu'));
+    const menuList = document.querySelector('.mdc-list');
+
+    // Telegram Init
+
+    window.Telegram.WebApp.MainButton.text = 'Посмотреть перевод';
+    window.Telegram.WebApp.MainButton.isVisible = true;
+    window.Telegram.WebApp.MainButton.isActive = false;
+    window.Telegram.WebApp.MainButton.color = window.Telegram.WebApp.themeParams.hint_color;
+    window.Telegram.WebApp.MainButton.onClick(() => {
+        // With current repo's implementation it will be the same domain, but it can be customized
+        fetch(`${callbackUrl}?query=${window.Telegram.WebApp.initDataUnsafe.query_id}&word=${field.value}`)
+    });
+
+    // Add listeners to the text field
+
+    fieldInput.addEventListener('keydown', () => {
+        field.value = capitalize(field.value);
+
+        window.Telegram.WebApp.MainButton.isActive = false;
+        window.Telegram.WebApp.MainButton.color = window.Telegram.WebApp.themeParams.hint_color;
+    });
+
+    fieldInput.addEventListener('keyup', () => {
+        menu.setAbsolutePosition(
+            fieldElement.getBoundingClientRect().left,
+            window.Telegram.WebApp.viewportHeight / 2 + fieldHeight / 2 + 5
+        );
+        menuList.innerHTML = String();
+
+        const filteredTranslations = availableTranslations.filter(string => string.includes(field.value));
+        filteredTranslations.forEach((el) => {
+            menuList.innerHTML += createItem(el);
         });
-    </script>
+
+        if (filteredTranslations.length > 0) {
+            menu.open();
+        } else {
+            menu.close();
+        }
+    });
+
+    // Utilities
+
+    function capitalize(word) {
+        return word[0].toUpperCase() + word.slice(1).toLowerCase();
+    }
+
+    function createItem(title) {
+        return '' +
+            `<li class="mdc-list-item" role="menuitem" onclick="clickList('${title}')">\n` +
+            '    <span class="mdc-list-item__ripple"></span>\n' +
+            `    <span class="mdc-list-item__text">${title}</span>\n` +
+            '</li>';
+    }
+
+    function clickList(title) {
+        window.Telegram.WebApp.MainButton.isActive = true;
+        window.Telegram.WebApp.MainButton.color = window.Telegram.WebApp.themeParams.button_color;
+        field.focus();
+        menu.close();
+        field.value = title;
+    }
+</script>
 </body>
 </html>
+<style>
+    :root {
+        --mdc-theme-primary: var(--tg-theme-link-color);
+        --mdc-theme-surface: var(--tg-theme-bg-color);
+        --mdc-theme-on-surface: var(--tg-theme-text-color);
+    }
+
+    html, body {
+        background-color: var(--tg-theme-bg-color);
+        margin: 0 auto;
+    }
+
+    #app {
+        display: flex;
+        width: 100%;
+        height: var(--tg-viewport-height);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .mdc-text-field {
+        color: var(--tg-theme-hint-color);
+        caret-color: var(--tg-theme-text-color);
+    }
+
+    .mdc-text-field--focused, .mdc-text-field .mdc-text-field__input {
+        caret-color: var(--tg-theme-link-color);
+    }
+
+    .mdc-text-field--focused:not(.mdc-text-field--disabled) .mdc-floating-label {
+        color: var(--tg-theme-link-color) !important;
+    }
+
+    .mdc-text-field:not(.mdc-text-field--disabled) .mdc-text-field__input {
+        color: var(--tg-theme-text-color);
+    }
+
+    .mdc-text-field:not(.mdc-text-field--disabled) .mdc-floating-label {
+        color: var(--tg-theme-hint-color);
+    }
+
+    .mdc-text-field--disabled .mdc-text-field__input {
+        color: var(--tg-theme-hint-color);
+    }
+
+    .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__leading, .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__notch, .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__trailing {
+        border-color: var(--tg-theme-hint-color);
+    }
+</style>
